@@ -1,5 +1,8 @@
 package com.msbeigi.springsecurityclient.controller;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.msbeigi.springsecurityclient.entity.User;
 import com.msbeigi.springsecurityclient.entity.VerificationToken;
 import com.msbeigi.springsecurityclient.event.RegistrationCompleteEvent;
+import com.msbeigi.springsecurityclient.model.PasswordModel;
 import com.msbeigi.springsecurityclient.model.UserModel;
 import com.msbeigi.springsecurityclient.service.UserService;
 
@@ -56,11 +60,44 @@ public class RegistrationController {
         return "Verification link sent";
     }
 
+    @PostMapping("/restPassword")
+    public String resetPassword(@RequestBody PasswordModel passwordModel, HttpServletRequest request) {
+        User user = userService.findUserByEmail(passwordModel.email());
+        String url = "";
+        if(user != null) {
+            String token = UUID.randomUUID().toString();
+            userService.createPasswordResetTokenForUser(user, token);
+            url = passwordResetTokenMail(user, applicationUrl(request), token);
+        }
+        return url;
+    }
+
+    @PostMapping("/savePassword")
+    public String savePassword(@RequestParam("token") String token, @RequestBody PasswordModel passwordModel) {
+        String result = userService.validatePasswordRestToken(token);
+        if (!result.equalsIgnoreCase("valid")) {
+            return "Invalid token";
+        }
+        Optional<User> user = userService.getUserByPasswordResetToken(token);
+        
+        if (user.isPresent()) {
+            userService.changePassword(user.get(), passwordModel.newPassword());
+            return "Password resets successfully";
+        } else {
+            return "Invalid token";
+        }
+    }
+
+    private String passwordResetTokenMail(User user, String applicationUrl, String token) {
+        String url = applicationUrl + "/savePassword?token=" + token;
+
+        log.info("Click to reset your password: {}", url);
+        return url;
+    }
+
     private void resendVerificationTokenMail(User user, String applicationUrl, VerificationToken verificationToken) {
         String url = applicationUrl + "/verifyRegistration?token=" + verificationToken.getToken();
-
         log.info("Click to verify your account: {}", url);
-
     }
 
     private String applicationUrl(HttpServletRequest request) {

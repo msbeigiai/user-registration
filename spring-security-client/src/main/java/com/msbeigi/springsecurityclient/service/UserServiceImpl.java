@@ -27,8 +27,7 @@ public class UserServiceImpl implements UserService {
             UserRepository userRepository,
             VerificationTokenRepository verificationTokenRepository,
             PasswordEncoder passwordEncoder,
-            PasswordResetTokenRepository passwordResetTokenRepository
-        ) {
+            PasswordResetTokenRepository passwordResetTokenRepository) {
         this.userRepository = userRepository;
         this.verificationTokenRepository = verificationTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -40,8 +39,8 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setEmail(userModel.email());
         user.setFirstname(userModel.firtname());
-		user.setLastname(userModel.lastname());
-		user.setRole("USER");
+        user.setLastname(userModel.lastname());
+        user.setRole("USER");
         user.setPassword(passwordEncoder.encode(userModel.password()));
         userRepository.save(user);
         return user;
@@ -49,7 +48,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void saveVerificationTokenForUser(String token, User user) {
-        VerificationToken verificationToken = new VerificationToken(user, token);    
+        VerificationToken verificationToken = new VerificationToken(user, token);
         verificationTokenRepository.save(verificationToken);
     }
 
@@ -70,7 +69,7 @@ public class UserServiceImpl implements UserService {
 
         user.setEnabled(true);
         userRepository.save(user);
-        
+
         return "valid";
     }
 
@@ -91,7 +90,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void createPasswordResetTokenForUser(User user, String token) {
         PasswordResetToken passwordResetToken = new PasswordResetToken(user, token);
-            passwordResetTokenRepository.save(passwordResetToken);
+        passwordResetTokenRepository.save(passwordResetToken);
     }
 
     @Override
@@ -122,4 +121,10 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
+
+    @Override
+    public boolean checkIfValidOldPassword(User user, String oldPassword) {
+        return passwordEncoder.matches(oldPassword, user.getPassword());
+    }
+
 }

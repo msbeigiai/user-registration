@@ -28,9 +28,8 @@ public class RegistrationController {
     private final UserService userService;
     private final ApplicationEventPublisher publisher;
 
-    public RegistrationController(UserService userService, 
-        ApplicationEventPublisher publisher
-    ) {
+    public RegistrationController(UserService userService,
+            ApplicationEventPublisher publisher) {
         this.userService = userService;
         this.publisher = publisher;
     }
@@ -60,11 +59,11 @@ public class RegistrationController {
         return "Verification link sent";
     }
 
-    @PostMapping("/restPassword")
+    @PostMapping("/resetPassword")
     public String resetPassword(@RequestBody PasswordModel passwordModel, HttpServletRequest request) {
         User user = userService.findUserByEmail(passwordModel.email());
         String url = "";
-        if(user != null) {
+        if (user != null) {
             String token = UUID.randomUUID().toString();
             userService.createPasswordResetTokenForUser(user, token);
             url = passwordResetTokenMail(user, applicationUrl(request), token);
@@ -79,13 +78,24 @@ public class RegistrationController {
             return "Invalid token";
         }
         Optional<User> user = userService.getUserByPasswordResetToken(token);
-        
+
         if (user.isPresent()) {
             userService.changePassword(user.get(), passwordModel.newPassword());
             return "Password resets successfully";
         } else {
             return "Invalid token";
         }
+    }
+
+    @PostMapping("/changePassword")
+    public String changePassword(@RequestBody PasswordModel passwordModel) {
+        User user = userService.findUserByEmail(passwordModel.email());
+        if (!userService.checkIfValidOldPassword(user, passwordModel.oldPassword())) {
+            return "Invalid old password";
+        }
+        // save new password
+        userService.changePassword(user, passwordModel.newPassword());
+        return "Password changed successfully";
     }
 
     private String passwordResetTokenMail(User user, String applicationUrl, String token) {
@@ -103,5 +113,5 @@ public class RegistrationController {
     private String applicationUrl(HttpServletRequest request) {
         return "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
     }
-    
+
 }

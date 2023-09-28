@@ -1,4 +1,4 @@
-package com.msbeigi.springsecurityclient.entity;
+package com.msbeigi.oauthauthorizationserver.entity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -9,7 +9,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "users")
 public class User {
-    
+
     @Id
     @GeneratedValue
     private Long id;
@@ -22,7 +22,7 @@ public class User {
 
     private String role;
     private boolean enabled = false;
-    
+
     public User() {
     }
 
